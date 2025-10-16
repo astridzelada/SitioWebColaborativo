@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tienda Guatemalteca - Nuestras Ubicaciones</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Estilos personalizados -->
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --secondary-color: #2E7D32;
+            --accent-color: #8BC34A;
+        }
+        
+        body {
+            padding-top: 76px;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+        }
+        
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .hero-section {
+            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), 
+                        url('https://images.unsplash.com/photo-1580136579312-94651dfd596d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80');
+            background-size: cover;
+            background-position: center;
+            color: white;
+            padding: 80px 0;
+            margin-bottom: 40px;
+        }
+        
+        .map-container {
+            height: 500px;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .location-card {
+            transition: transform 0.3s, box-shadow 0.3s;
+            cursor: pointer;
+            border: none;
+            border-radius: 10px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .location-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        
+        .location-card.active {
+            border-left: 5px solid var(--primary-color);
+        }
+        
+        .card-header {
+            background-color: var(--primary-color);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .store-info {
+            background-color: white;
+            border-radius: 10px;
+            padding: 25px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        
+        .guatemala-flag {
+            height: 20px;
+            width: 30px;
+            display: inline-block;
+            background: linear-gradient(to bottom, 
+                #4997D0 0%, #4997D0 33%, 
+                white 33%, white 66%, 
+                #4997D0 66%, #4997D0 100%);
+            border: 1px solid #ccc;
+            margin-right: 8px;
+            vertical-align: middle;
+        }
+        
+        footer {
+            background-color: #343a40;
+            color: white;
+            padding: 30px 0;
+            margin-top: 50px;
+        }
+        
+        .section-title {
+            position: relative;
+            padding-bottom: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 60px;
+            height: 3px;
+            background-color: var(--primary-color);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+        }
+        
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Barra de navegación -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">
+                <span class="guatemala-flag"></span>
+                Tienda Guatemalteca
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Inicio</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Productos</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#">Ubicaciones</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Sobre Nosotros</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">Contacto</a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Sección Hero -->
+    <section class="hero-section">
+        <div class="container text-center">
+            <h1 class="display-4 fw-bold mb-4">Nuestras Tiendas en Guatemala</h1>
+            <p class="lead mb-4">Encuentra la sucursal más cercana y disfruta de nuestros productos y servicios</p>
+            <a href="#locations" class="btn btn-primary btn-lg">Ver Ubicaciones</a>
+        </div>
+    </section>
+
+    <!-- Sección de Mapa y Ubicaciones -->
+    <section id="locations" class="py-5">
+        <div class="container">
+            <h2 class="section-title">Nuestras Ubicaciones en Guatemala</h2>
+            
+            <div class="row">
+                <!-- Mapa -->
+                <div class="col-lg-8 mb-4">
+                    <div id="map" class="map-container"></div>
+                </div>
+                
+                <!-- Lista de ubicaciones -->
+                <div class="col-lg-4">
+                    <div class="store-info">
+                        <h4 class="mb-3">Selecciona una ubicación</h4>
+                        <div id="location-list">
+                            <!-- Las ubicaciones se cargarán dinámicamente con JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección de información adicional -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <h2 class="section-title text-center">Nuestros Servicios</h2>
+            
+            <div class="row">
+                <div class="col-md-4 text-center mb-4">
+                    <div class="card location-card h-100">
+                        <div class="card-body">
+                            <div class="feature-icon">🕒</div>
+                            <h5 class="card-title">Horarios de Atención</h5>
+                            <p class="card-text">Lunes a Viernes: 8:00 - 20:00</p>
+                            <p class="card-text">Sábados: 9:00 - 18:00</p>
+                            <p class="card-text">Domingos: 10:00 - 16:00</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div class="card location-card h-100">
+                        <div class="card-body">
+                            <div class="feature-icon">🚚</div>
+                            <h5 class="card-title">Servicios</h5>
+                            <p class="card-text">Entrega a domicilio</p>
+                            <p class="card-text">Recogida en tienda</p>
+                            <p class="card-text">Asesoramiento personalizado</p>
+                            <p class="card-text">Garantía en todos los productos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div class="card location-card h-100">
+                        <div class="card-body">
+                            <div class="feature-icon">📞</div>
+                            <h5 class="card-title">Contacto</h5>
+                            <p class="card-text">Teléfono: +502 1234-5678</p>
+                            <p class="card-text">Email: info@tiendagt.com</p>
+                            <p class="card-text">WhatsApp: +502 8765-4321</p>
+                            <p class="card-text">Síguenos en redes sociales</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Pie de página -->
+    <footer>
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4">
+                    <h5>Tienda Guatemalteca</h5>
+                    <p>Ofreciendo los mejores productos con calidad y servicio desde 1995.</p>
+                </div>
+                <div class="col-md-4 mb-4">
+                    <h5>Enlaces Rápidos</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white">Inicio</a></li>
+                        <li><a href="#" class="text-white">Productos</a></li>
+                        <li><a href="#" class="text-white">Ubicaciones</a></li>
+                        <li><a href="#" class="text-white">Contacto</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5>Contáctanos</h5>
+                    <p>Email: info@tiendagt.com</p>
+                    <p>Teléfono: +502 1234-5678</p>
+                    <p>Dirección: 7a. Avenida 12-34, Zona 1, Ciudad de Guatemala</p>
+                </div>
+            </div>
+            <hr class="bg-white">
+            <div class="text-center">
+                <p>&copy; 2023 Tienda Guatemalteca. Todos los derechos reservados.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS y dependencias -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <!-- Script personalizado -->
+    <script>
+        // Datos de las ubicaciones de la tienda en Guatemala
+        const locations = [
+            {
+                id: 1,
+                name: "Tienda Zona 1, Ciudad de Guatemala",
+                address: "7a. Avenida 12-34, Zona 1, Ciudad de Guatemala",
+                phone: "+502 2234-5678",
+                hours: "Lun-Vie: 8:00-20:00, Sáb: 9:00-18:00, Dom: 10:00-16:00",
+                lat: 14.6349,
+                lng: -90.5130
+            },
+            {
+                id: 2,
+                name: "Tienda Oakland Mall",
+                address: "Calzada Roosevelt 22-01, Zona 7, Ciudad de Guatemala",
+                phone: "+502 2234-5679",
+                hours: "Lun-Dom: 10:00-20:00",
+                lat: 14.6458,
+                lng: -90.5513
+            },
+            {
+                id: 3,
+                name: "Tienda Miraflores",
+                address: "Centro Comercial Miraflores, Local 45, Ciudad de Guatemala",
+                phone: "+502 2234-5680",
+                hours: "Lun-Dom: 9:00-21:00",
+                lat: 14.5870,
+                lng: -90.5530
+            },
+            {
+                id: 4,
+                name: "Tienda Antigua Guatemala",
+                address: "4a. Calle Oriente 15, Antigua Guatemala, Sacatepéquez",
+                phone: "+502 2234-5681",
+                hours: "Lun-Sáb: 9:00-19:00, Dom: 10:00-17:00",
+                lat: 14.5586,
+                lng: -90.7295
+            },
+            {
+                id: 5,
+                name: "Tienda Quetzaltenango",
+                address: "14 Avenida 2-35, Zona 3, Quetzaltenango",
+                phone: "+502 2234-5682",
+                hours: "Lun-Vie: 8:00-19:00, Sáb: 9:00-18:00",
+                lat: 14.8370,
+                lng: -91.5200
+            },
+            {
+                id: 6,
+                name: "Tienda Escuintla",
+                address: "5a. Avenida 8-60, Zona 1, Escuintla",
+                phone: "+502 2234-5683",
+                hours: "Lun-Sáb: 8:00-19:00, Dom: 9:00-15:00",
+                lat: 14.3000,
+                lng: -90.7833
+            }
+        ];
+
+        // Inicializar el mapa centrado en Guatemala
+        const map = L.map('map').setView([14.6349, -90.5130], 8);
+
+        // Añadir capa de tiles (OpenStreetMap)
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        }).addTo(map);
+
+        // Grupo para los marcadores
+        const markers = L.layerGroup().addTo(map);
+
+        // Icono personalizado para los marcadores
+        const storeIcon = L.divIcon({
+            html: '<div style="background-color: #4CAF50; width: 25px; height: 25px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);"></div>',
+            className: 'store-marker',
+            iconSize: [25, 25],
+            iconAnchor: [12, 12]
+        });
+
+        // Función para añadir marcadores al mapa
+        function addMarkers() {
+            locations.forEach(location => {
+                const marker = L.marker([location.lat, location.lng], {icon: storeIcon})
+                    .addTo(markers)
+                    .bindPopup(`
+                        <div class="p-2">
+                            <h5 class="mb-2">${location.name}</h5>
+                            <p class="mb-1"><strong>Dirección:</strong> ${location.address}</p>
+                            <p class="mb-1"><strong>Teléfono:</strong> ${location.phone}</p>
+                            <p class="mb-0"><strong>Horario:</strong> ${location.hours}</p>
+                        </div>
+                    `);
+                
+                // Asignar el ID del marcador para referencia
+                marker.locationId = location.id;
+                
+                // Evento para cuando se hace clic en el marcador
+                marker.on('click', function() {
+                    highlightLocation(location.id);
+                });
+            });
+        }
+
+        // Función para resaltar una ubicación en la lista
+        function highlightLocation(locationId) {
+            // Quitar la clase activa de todos los elementos
+            document.querySelectorAll('.location-card').forEach(item => {
+                item.classList.remove('active');
+            });
+            
+            // Añadir la clase activa al elemento seleccionado
+            const selectedItem = document.querySelector(`.location-card[data-id="${locationId}"]`);
+            if (selectedItem) {
+                selectedItem.classList.add('active');
+                
+                // Desplazar suavemente a la tarjeta seleccionada
+                selectedItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            }
+        }
+
+        // Función para crear la lista de ubicaciones
+        function createLocationList() {
+            const locationList = document.getElementById('location-list');
+            
+            locations.forEach(location => {
+                const card = document.createElement('div');
+                card.className = 'card location-card mb-3';
+                card.setAttribute('data-id', location.id);
+                card.innerHTML = `
+                    <div class="card-header">${location.name}</div>
+                    <div class="card-body">
+                        <p class="card-text"><strong>Dirección:</strong> ${location.address}</p>
+                        <p class="card-text"><strong>Teléfono:</strong> ${location.phone}</p>
+                        <p class="card-text"><strong>Horario:</strong> ${location.hours}</p>
+                        <button class="btn btn-primary btn-sm ver-mapa-btn" data-id="${location.id}">Ver en Mapa</button>
+                    </div>
+                `;
+                
+                // Evento para cuando se hace clic en la tarjeta
+                card.addEventListener('click', function(e) {
+                    if (!e.target.classList.contains('ver-mapa-btn')) {
+                        highlightLocation(location.id);
+                        
+                        // Centrar el mapa en la ubicación seleccionada
+                        map.setView([location.lat, location.lng], 14);
+                        
+                        // Abrir el popup del marcador correspondiente
+                        markers.eachLayer(function(marker) {
+                            if (marker.locationId === location.id) {
+                                marker.openPopup();
+                            }
+                        });
+                    }
+                });
+                
+                // Evento para el botón "Ver en Mapa"
+                const verMapaBtn = card.querySelector('.ver-mapa-btn');
+                verMapaBtn.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    highlightLocation(location.id);
+                    
+                    // Centrar el mapa en la ubicación seleccionada
+                    map.setView([location.lat, location.lng], 14);
+                    
+                    // Abrir el popup del marcador correspondiente
+                    markers.eachLayer(function(marker) {
+                        if (marker.locationId === location.id) {
+                            marker.openPopup();
+                        }
+                    });
+                });
+                
+                locationList.appendChild(card);
+            });
+        }
+
+        // Inicializar la página
+        document.addEventListener('DOMContentLoaded', function() {
+            addMarkers();
+            createLocationList();
+            
+            // Centrar el mapa para mostrar todos los marcadores
+            const group = new L.featureGroup(markers.getLayers());
+            map.fitBounds(group.getBounds().pad(0.1));
+            
+            // Resaltar la primera ubicación por defecto
+            if (locations.length > 0) {
+                highlightLocation(locations[0].id);
+            }
+        });
+    </script>
+</body>
+</html>
